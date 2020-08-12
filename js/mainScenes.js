@@ -13,20 +13,47 @@ var direction = 1;
 var x = 10;
 var y = 5;
 
-var speed;
+var speed = 0;
 var jump = true;
-var randomY;
+var random;
 
 var bossHP = 100;
 
 var attackAngle;
 
-var bullet;
+var bulletPatten = 2;
+
+var boss_img = "boss";
+
+
+
 var bulletCount = 50;
-var cnt;
+var cnt = 0;
 var bulletArray = new Array();
 
 var unitHP = 10;
+
+var bullet = new Phaser.Class({
+    Extends: Phaser.GameObjects.Image,
+
+    initialize:
+    function bullet (scene, x, y){
+        Phaser.GameObjects.Image.call(this, scene);
+
+        this.setTexture('bullet');
+        this.setPosition(x, y);
+        this.setScale(3);
+    }
+});
+
+setInterval(()=>{
+    var patten = Phaser.Math.Between(2, 3);
+    bulletPatten = patten;
+    console.log(patten);
+}, 5000);
+
+
+
 
 
 class mainScenes extends Phaser.Scene{
@@ -38,7 +65,7 @@ class mainScenes extends Phaser.Scene{
 
     create(){
 
-        
+        random = Phaser.Math.Between(-5, -1);
         
         this.background = this.add.image(0,0,"background");
         this.background.setOrigin(0,0);
@@ -55,38 +82,83 @@ class mainScenes extends Phaser.Scene{
 
         this.floor.setScale(1.5);
 
-        this.boss = this.add.image(window.innerWidth/2, window.innerHeight-350, "boss_skill");
+        this.boss = this.add.image(window.innerWidth/2, window.innerHeight-350, boss_img);
+        
         this.unit = this.add.image(200, 175, "character");
 
         // this.bullet = this.add.image(window.innerWidth/2 - 80,window.innerHeight-550+x, "bullet");
+      
             
         // this.bullet.setScale(2);
+        
+        // this.children.add(new bullet(this, window.innerWidth/2 - 80, window.innerHeight-550));
+        if(bulletPatten == 1){
+            
+        }else if(bulletPatten == 2) {
+            for(var i = 1; i <= bulletCount; i++){
+                bulletArray[i] = this.children.add(new bullet(this, window.innerWidth/2 - 80 , window.innerHeight-550)); 
+                // console.log(bulletArray[5]);
+            }
+        }else if(bulletPatten == 3){
+            for(var i = 1; i <= bulletCount; i++){
+                bulletArray[i] = this.children.add(new bullet(this, window.innerWidth/2 - 80 , window.innerHeight-550)); 
+             
+            }
+        }
+      
+
         
         this.cursorKeys = this.input.keyboard.createCursorKeys();
         
         this.space = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
         // for(var i = 0; i <= bulletCount)
-         
-       
+        
+
     };
 
     update(){
         
-        this.moveShip(this.bullet,this.unit ,10);
+        this.moveShip(this.unit ,10);
                 
         this.gravity( this.unit, this.floor, 10);
         this.unitMove(this.unit, 15);
         if(bossHP <= 0){
-            
             this.scene.start("endGame");
         }
-        this.patten2();
         
+        
+      
+      if(bulletPatten == 2){
+        for(var i = 1; i <= bulletCount; i++){
+            bulletArray[i].alpha = 1;
+            // bulletArray[i].x += random;
+            bulletArray[i].y -= random;
+            this.removeBullet(bulletArray[i].x, bulletArray[i].y, bulletArray[i]);
+        }
+
+        
+      }  
+
+      if(bulletPatten == 3){
+        for(var i = 1; i <= bulletCount; i++){
+            bulletArray[i].x += random;
+            // bulletArray[i].y -= random; 
+            this.removeBullet(bulletArray[i].x, bulletArray[i].y, bulletArray[i]);
+        }
+      }
+
+    if(bulletPatten == 2 || bulletPatten == 3){
+        boss_img = "boss_skill";
+    }else if(bulletPatten == 1){
+        boss_img = "boss";
+    }
+          
+    
     };
     
     
 
-    moveShip(bullet, character ,speed){
+    moveShip(character ,speed){
         // bullet.x -= speed;
         // // if(unitY != bullet.y) {
         //     bullet.y += 10 * (bullet.y - unitY) / (unitX - bullet.x);
@@ -105,13 +177,54 @@ class mainScenes extends Phaser.Scene{
         // if(character.x > window.innerWidth /2){
         //     bullet.y -= 10 * (bullet.y + unitY) / (unitX + bullet.x);
         // }
-        // this.patten1();
+        
     }
 
-    resetShipPos(bullet){
-        bullet.x = window.innerWidth/2 - 80;
-        bullet.y = window.innerHeight-550;
+   removeBullet(x, y, bullet){
+    
+    if(x < 0 || x >window.innerWidth){
+        for(var i = 1; i <= bulletCount ;i++){
+            bullet.alpha = 0;
+            bullet.x = window.innerWidth/2 - 80;
+            bullet.y= window.innerHeight-550;
+            if(bulletArray[i].destroy()){
+                // bulletPatten = 1;
+                console.log("성공");
+            }
+            
+        }
+        if(bulletArray[50].x > 0 || bulletArray[50].x < window.innerWidth ){
+            // bulletPatten = 1;
+        }
+        
     }
+    if(y < 0 || y > window.innerHeight){
+            bullet.alpha = 0;
+            bullet.x = window.innerWidth/2 - 80;
+            bullet.y= window.innerHeight-550;
+        
+        if(bulletArray[50].y > 0 || bulletArray[50].y < window.innerHeight ){
+            // bulletPatten = 1;
+        }
+        console.log(bulletPatten);    
+    }
+
+    if(this.unit.x > x && this.unit.x - 50 < x + 30 && this.unit.y > y && this.unit.y- 30 < y + 50){
+        
+        bullet.x = window.innerWidth/2 - 80;
+        bullet.y=  window.innerHeight-550;
+        unitHP--;
+        if(unitHP < 0){
+            unitHP = 10;
+        }
+        console.log("충돌");
+        console.log(unitHP);
+    }
+
+    
+
+    
+   }
 
     gravity(character, floor, speed){
         
@@ -123,10 +236,6 @@ class mainScenes extends Phaser.Scene{
                 jump = false;
             }
         }
-        
-        //else if(character.height != floor.height - 30){
-            
-        // }
     }
 
     unitMove(character, speed){
@@ -190,7 +299,7 @@ class mainScenes extends Phaser.Scene{
         let repeat = setInterval(()=>{
             if(attack.alpha > 0 && direction == 1){
                 attack.alpha  -= 0.1;
-                console.log(attack.alpha);
+                
                 attack.x +=100;
             }else {
                 clearInterval(repeat);
@@ -198,7 +307,7 @@ class mainScenes extends Phaser.Scene{
 
             if(attack.alpha > 0 && direction == 2){
                 
-                console.log(attack.alpha);
+                
                 attack.alpha  -= 0.1;
                 attack.x -=100;
             }else {
@@ -214,39 +323,13 @@ class mainScenes extends Phaser.Scene{
         if(attack.x > this.boss.x- 350 && attack.x < this.boss.x + 400 ){
             console.log(bossHP);
             bossHP -= 5;
-            
-            setTimeout(() => attack.destroy(),200);
+         
+            setTimeout(() => attack.destroy(),150);
         }
 
-        setTimeout(() => attack.destroy(),200);
+        setTimeout(() => attack.destroy(),150);
         
     }
 
-    // bullet(){
-    //     var bullet = this.add.bullet(this);       
-    // }
 
-    patten1() {
-        for(var i = 1; i < bulletCount; i++){
-
-        }
-        
-    }
-
-    patten2(){
-        var repeat = setInterval(()=> {
-            if(cnt != bulletCount){
-            
-            
-            cnt++;
-            }else {
-                clearInterval(repeat);
-            }
-        }, 50);
-    }
-
-    patten3(){
-        
-    }
-    
 }
